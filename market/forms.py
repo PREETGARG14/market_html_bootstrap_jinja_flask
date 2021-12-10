@@ -31,3 +31,15 @@ class PurchaseItemForm(FlaskForm):
 
 class SellItemForm(FlaskForm):
     submit = SubmitField(label='Sell Item!')
+
+
+class AdminAddProductForm(FlaskForm):
+    name = StringField(label='Product Name:', validators=[DataRequired()])
+    price = StringField(label='Product Price:', validators=[DataRequired()])
+    barcode = StringField(label='Product Barcode:', validators=[DataRequired()])
+    description = StringField(label='Product Description:', validators=[DataRequired()])
+    submit = SubmitField(label='Add Products')
+class AdminLoginForm(FlaskForm):
+    username = StringField(label='User Name:', validators=[DataRequired()])
+    password = PasswordField(label='Password:', validators=[DataRequired()])
+    submit = SubmitField(label='Sign in')

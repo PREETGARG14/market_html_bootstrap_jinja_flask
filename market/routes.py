@@ -1,10 +1,15 @@
 from flask import flash
 from market import app
 from flask import render_template, redirect, url_for,request
-from market.models import Item, User
-from market.forms import RegisterForm, LoginForm,PurchaseItemForm,SellItemForm
+from market.models import Item, User,AdminUser
+from market.forms import RegisterForm, LoginForm,PurchaseItemForm,SellItemForm,AdminLoginForm,AdminAddProductForm
 from market import db
 from flask_login import login_user,logout_user,login_required,current_user
+
+@app.route("/cards")
+def cards():
+    return render_template('cards.html')
+
 
 @app.route("/")
 @app.route('/home')
@@ -40,7 +45,8 @@ def market_page():
         return redirect(url_for('market_page'))
 
     if request.method == "GET":
-        items = Item.query.filter_by(owner=None)
+        # items = Item.query.filter_by(owner=None)
+        items=Item.query.order_by(Item.id.asc())
         owned_items = Item.query.filter_by(owner=current_user.id)
         return render_template('market.html', items=items, purchase_form=purchase_form, owned_items=owned_items, selling_form=selling_form) 
 
@@ -88,3 +94,43 @@ def logout_page():
     logout_user()
     flash("You have been logged out!", category='info')
     return redirect(url_for("home_page"))
+
+
+@app.route('/admin', methods=['GET', 'POST'])
+def admin_login_page():
+    form = AdminLoginForm()
+    products =  db.session.query(Item).filter()
+
+    if form.validate_on_submit():
+        # result = db.session.query(Admins).filter(Admins.email==email, Admins.password==password)
+
+        attempted_user = AdminUser.query.filter_by(username=form.username.data , password_hash = form.password.data)
+        if (attempted_user):
+        # login_user(attempted_user)
+            # flash(f'Success! You are logged in as: {attempted_user.username}(Admin)', category='success')
+            return redirect(url_for('add_product_page' , products = products))
+        else:
+            flash('Username and password are not match! Please try again', category='danger')
+
+    return render_template('adminlogin.html', form=form)
+
+@app.route('/admin/addproducts', methods=['GET', 'POST'])
+def add_product_page():
+    form = AdminAddProductForm()
+    products =  db.session.query(Item).filter()
+    print(products)
+    if form.validate_on_submit():
+        product_information = Item(name=form.name.data,
+                              price=form.price.data,
+                              barcode=form.barcode.data,
+                              description = form.description.data)
+        db.session.add(product_information)
+        db.session.commit()
+        # login_user(user_to_create)
+        flash(f"Product {product_information.name} added successfully", category='success')
+        return redirect(url_for('add_product_page' , form=form , products = products))
+    if form.errors != {}: #If there are not errors from the validations
+        for err_msg in form.errors.values():
+            flash(f'There was an error with creating a user: {err_msg}', category='danger')
+        
+    return render_template('adminpage.html', form=form , products = products)

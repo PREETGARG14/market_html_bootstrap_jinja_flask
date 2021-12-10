@@ -11,7 +11,7 @@ class User(db.Model,UserMixin):
     username = db.Column(db.String(length=30), nullable=False, unique=True)
     email_address = db.Column(db.String(length=50), nullable=False, unique=True)
     password_hash = db.Column(db.String(length=600), nullable=False)
-    budget = db.Column(db.Integer(), nullable=False, default=1000)
+    budget = db.Column(db.Integer(), nullable=False, default=0)
     items = db.relationship('Item', backref='owned_user', lazy=True)    
 
     @property
@@ -33,7 +33,8 @@ class User(db.Model,UserMixin):
         return (self.password_hash, attempted_password)  
 
     def can_purchase(self, item_obj):
-        return self.budget >= item_obj.price  
+        return self.budget >= 0
+        # return self.budget >= item_obj.price  
 
     def can_sell(self, item_obj):
         return item_obj in self.items
@@ -50,10 +51,21 @@ class Item(db.Model):
 
     def buy(self, user):
         self.owner = user.id
-        user.budget -= self.price
+        user.budget += self.price
         db.session.commit()
 
     def sell(self, user):
         self.owner = None
         user.budget += self.price
         db.session.commit()
+
+
+class AdminUser(db.Model, UserMixin):
+    __tablename__ = 'admin'
+    id = db.Column(db.Integer(), primary_key=True)
+    username = db.Column(db.String(length=30), nullable=False, unique=True)
+    email_address = db.Column(db.String(length=50), nullable=False, unique=True)
+    password_hash = db.Column(db.String(length=60), nullable=False)
+
+db.create_all()
+db.session.commit()
